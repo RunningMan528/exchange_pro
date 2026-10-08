@@ -5,3 +5,10 @@
 # Xcode-related
 **/dgph
 **/xcuserdata/
+
+# Project configuration required by clean CI checkouts.
+!/Flutter/Flutter-Debug.xcconfig
+!/Flutter/Flutter-Release.xcconfig
+!/Runner/Configs/Debug.xcconfig
+!/Runner/Configs/Release.xcconfig
+!/Runner.xcworkspace/contents.xcworkspacedata
