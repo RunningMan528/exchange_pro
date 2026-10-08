@@ -1,0 +1,19 @@
+name: exchange_flutter_demo
+description: 交易所 Flutter 客户端 Demo：实时订单簿(快照+增量+Sequence)、WebSocket 连接管理、合约交易、状态同步与性能优化。
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

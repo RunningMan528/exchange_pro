@@ -1,0 +1,17 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+
+# 平台构建产物
+ios/Pods/
+ios/.symlinks/
+android/.gradle/
+android/local.properties
+
+# 系统文件
+.DS_Store
