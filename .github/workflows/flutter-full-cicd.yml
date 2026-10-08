@@ -1,0 +1,181 @@
+name: Flutter 全平台 CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  FLUTTER_VERSION: 3.47.4
+
+# 全局依赖缓存、并行多系统运行
+jobs:
+  # 任务1：公共代码检查 + 单元测试
+  test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 配置 Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: 安装项目依赖
+        run: flutter pub get
+
+      - name: 代码格式规范校验
+        run: dart format --set-exit-if-changed .
+
+      - name: 静态代码分析
+        run: flutter analyze --fatal-infos
+
+      - name: 执行单元测试
+        run: flutter test --coverage
+
+  # 任务2：Android 构建
+  build-android:
+    needs: test-lint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+      - name: 编译 Android 正式 APK
+        run: flutter build apk --release
+      - name: 上传 APK 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-Release-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  # 任务3：iOS 构建（必须 macos 运行器）
+  build-ios:
+    needs: test-lint
+    runs-on: macos-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+      - name: 编译 iOS 归档包
+        run: flutter build ios --release --no-codesign
+      - name: 打包 iOS 产物
+        run: zip -r iOS-Release.zip build/ios/iphoneos/Runner.app
+      - name: 上传 iOS 压缩包
+        uses: actions/upload-artifact@v4
+        with:
+          name: iOS-Release-Build
+          path: iOS-Release.zip
+
+  # 任务4：Web 构建 + 部署
+  build-web:
+    needs: test-lint
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+      - name: 编译 Web 正式产物
+        run: flutter build web --release
+      # 可自行配置 Firebase / Nginx 部署，这里预留扩展
+
+  # ========== 下面是你要的三大桌面端 ==========
+
+  # 任务5：Windows 桌面端构建
+  build-windows:
+    needs: test-lint
+    runs-on: windows-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: 配置 Flutter Windows
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: 依赖安装
+        run: flutter pub get
+      - name: 编译 Windows 桌面安装包
+        run: flutter build windows --release
+      - name: 压缩 Windows 产物
+        run: >-
+          Compress-Archive -Path build\windows\x64\runner\Release\*
+          -DestinationPath Windows-Release.zip
+      - name: 上传 Windows 安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Release-Zip
+          path: Windows-Release.zip
+
+  # 任务6：macOS 桌面端构建
+  build-macos:
+    needs: test-lint
+    runs-on: macos-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - run: flutter pub get
+      - name: 编译 macOS 桌面
+        run: flutter build macos --release
+      - name: 压缩 macOS 产物
+        run: zip -r macOS-Release.zip build/macos/Build/Products/Release/
+      - name: 上传 macOS 包
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-Release-Zip
+          path: macOS-Release.zip
+
+  # 任务7：Linux 桌面端构建
+  build-linux:
+    needs: test-lint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: 安装 Linux 编译依赖
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install -y clang cmake ninja-build pkg-config
+          libgtk-3-dev liblzma-dev
+
+      - run: flutter pub get
+      - name: 编译 Linux 桌面
+        run: flutter build linux --release
+      - name: 打包 Linux 产物
+        run: zip -r Linux-Release.zip build/linux/x64/release/bundle/
+      - name: 上传 Linux 包
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-Release-Zip
+          path: Linux-Release.zip
