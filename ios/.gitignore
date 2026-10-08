@@ -32,3 +32,9 @@ Runner/GeneratedPluginRegistrant.*
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+
+# Project configuration required by clean CI checkouts.
+!/Flutter/Debug.xcconfig
+!/Flutter/Release.xcconfig
+!/Runner.xcworkspace/contents.xcworkspacedata
+!/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata
